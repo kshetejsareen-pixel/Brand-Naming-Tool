@@ -19,17 +19,25 @@ export interface ProjectName {
   note?: string
 }
 
+// A territory is a distinct strategic premise with a small cluster of names
+// exploring it — the unit a studio actually presents to a client. A flat
+// list of 7 unrelated names reads as a name dump, not a developed set.
+export interface ProjectTerritory {
+  premise: string
+  names: ProjectName[]
+}
+
 export interface ProjectState {
   status: ProjectStatus
   brandCharacter?: string
-  names: ProjectName[]
+  territories: ProjectTerritory[]
   chosenName?: string
   notes?: string
 }
 
 export const DEFAULT_PROJECT: ProjectState = {
   status: 'new',
-  names: [],
+  territories: [],
 }
 
 export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [

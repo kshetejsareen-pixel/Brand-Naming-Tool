@@ -146,6 +146,7 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
             <AnswerField id="belief" a={a} />
             <AnswerField id="competitors" a={a} />
             <AnswerField id="admired_name" a={a} />
+            <AnswerField id="price_tier" a={a} />
           </Section>
 
           {/* Module 02 */}
@@ -166,7 +167,9 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
                 </div>
               ))}
             </div>
-            <Field label="Sonic profile" value={`${sonic.label} (${sonic.score}/${sonic.total}) — ${formatAnswer('cultural_register', a.cultural_register)}`} />
+            <Field label="Sonic profile" value={`${sonic.label} (${sonic.score}/${sonic.total})`} />
+            <AnswerField id="market_scope" a={a} />
+            <AnswerField id="cultural_register" a={a} />
           </Section>
 
           {/* Module 04 */}

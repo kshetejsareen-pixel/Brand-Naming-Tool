@@ -94,40 +94,49 @@ export function ProjectPanel({
         </div>
       )}
 
-      {project.names.length === 0 ? (
+      {project.territories.length === 0 ? (
         <div style={{ fontSize: '11px', color: '#5a5650', marginBottom: '16px' }}>
           No naming directions generated for this submission.
         </div>
       ) : (
         <div style={{ marginBottom: '16px' }}>
-          {project.names.map((n, i) => (
-            <div key={`${n.name}-${i}`} style={{ border: '1px solid rgba(236,232,224,0.08)', padding: '12px 16px', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', gap: '12px' }}>
-                <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '18px', fontStyle: 'italic', color: '#ece8e0' }}>
-                  {n.name}{n.type && <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', marginLeft: '8px' }}>{n.type}</span>}
-                </span>
-                <label style={{ fontSize: '10px', color: '#8a857d', display: 'flex', gap: '6px', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                  <input
-                    type="radio"
-                    name={`chosen-${token}`}
-                    checked={project.chosenName === n.name}
-                    onChange={() => save({ ...project, chosenName: n.name })}
-                  />
-                  Chosen
-                </label>
+          {project.territories.map((territory, ti) => (
+            <div key={`${territory.premise}-${ti}`} style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '12px', color: '#8a857d', lineHeight: 1.5, marginBottom: '10px', fontStyle: 'italic' }}>
+                {territory.premise}
               </div>
-              {n.rationale && <div style={{ fontSize: '12px', color: '#8a857d', marginBottom: '4px', lineHeight: 1.5 }}>{n.rationale}</div>}
-              {n.risk && <div style={{ fontSize: '11px', color: '#6b6460', marginBottom: '8px' }}>Risk: {n.risk}</div>}
-              <textarea
-                placeholder="Notes on this name…"
-                defaultValue={n.note ?? ''}
-                onBlur={(e) => {
-                  const names = project.names.map((x, xi) => (xi === i ? { ...x, note: e.target.value } : x))
-                  save({ ...project, names })
-                }}
-                style={textAreaStyle}
-                rows={2}
-              />
+              {territory.names.map((n, ni) => (
+                <div key={`${n.name}-${ni}`} style={{ border: '1px solid rgba(236,232,224,0.08)', padding: '12px 16px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', gap: '12px' }}>
+                    <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '18px', fontStyle: 'italic', color: '#ece8e0' }}>
+                      {n.name}{n.type && <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', marginLeft: '8px' }}>{n.type}</span>}
+                    </span>
+                    <label style={{ fontSize: '10px', color: '#8a857d', display: 'flex', gap: '6px', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                      <input
+                        type="radio"
+                        name={`chosen-${token}`}
+                        checked={project.chosenName === n.name}
+                        onChange={() => save({ ...project, chosenName: n.name })}
+                      />
+                      Chosen
+                    </label>
+                  </div>
+                  {n.rationale && <div style={{ fontSize: '12px', color: '#8a857d', marginBottom: '4px', lineHeight: 1.5 }}>{n.rationale}</div>}
+                  {n.risk && <div style={{ fontSize: '11px', color: '#6b6460', marginBottom: '8px' }}>Risk: {n.risk}</div>}
+                  <textarea
+                    placeholder="Notes on this name…"
+                    defaultValue={n.note ?? ''}
+                    onBlur={(e) => {
+                      const territories = project.territories.map((t, tii) =>
+                        tii === ti ? { ...t, names: t.names.map((x, xi) => (xi === ni ? { ...x, note: e.target.value } : x)) } : t
+                      )
+                      save({ ...project, territories })
+                    }}
+                    style={textAreaStyle}
+                    rows={2}
+                  />
+                </div>
+              ))}
             </div>
           ))}
         </div>

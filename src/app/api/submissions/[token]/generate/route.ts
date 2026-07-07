@@ -9,10 +9,10 @@ function checkAdminKey(req: NextRequest): boolean {
   return !!process.env.ADMIN_KEY && key === process.env.ADMIN_KEY
 }
 
-// Generates another batch of naming directions for an existing submission —
+// Generates another batch of naming territories for an existing submission —
 // same diagnostic, told explicitly which names are already on the table so
-// it explores new territory instead of re-rolling near-duplicates. Appends
-// to project.names rather than replacing it.
+// it explores new ground instead of re-rolling near-duplicates. Appends as
+// additional territories rather than replacing what's already there.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   if (!checkAdminKey(req)) {
     return NextResponse.json({ ok: false }, { status: 401 })
@@ -37,10 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     const answers = data.answers as Answers
     const project: ProjectState = { ...DEFAULT_PROJECT, ...data.project }
 
-    const result = await generateNamingDirections(answers, {
-      existingNames: project.names.map((n) => n.name),
-      steeringNote,
-    })
+    const existingNames = project.territories.flatMap((t) => t.names.map((n) => n.name))
+    const result = await generateNamingDirections(answers, { existingNames, steeringNote })
 
     if (!result) {
       return NextResponse.json({ ok: false, error: 'Generation failed or ANTHROPIC_API_KEY not configured' }, { status: 502 })
@@ -50,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       ...project,
       status: project.status === 'new' ? 'generated' : project.status,
       brandCharacter: project.brandCharacter ?? result.brandCharacter,
-      names: [...project.names, ...result.names],
+      territories: [...project.territories, ...result.territories],
     }
 
     await put(`submissions/${token}.json`, JSON.stringify({ ...data, project: updatedProject }, null, 2), {

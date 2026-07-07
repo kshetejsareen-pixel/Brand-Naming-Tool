@@ -1,5 +1,5 @@
 import { list } from '@vercel/blob'
-import { type Answers, formatAnswer } from '@/lib/schema'
+import { type Answers, SCREENS_BY_ID, formatAnswer } from '@/lib/schema'
 import { type ProjectState, DEFAULT_PROJECT } from '@/lib/project'
 import { ProjectPanel } from '@/components/ProjectPanel'
 
@@ -137,6 +137,7 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
               <Row k="Core belief"       v={formatAnswer('belief', a.belief)} />
               <Row k="Competitors"       v={formatAnswer('competitors', a.competitors)} />
               <Row k="Admired name"      v={formatAnswer('admired_name', a.admired_name)} />
+              <Row k="Price tier"        v={formatAnswer('price_tier', a.price_tier)} />
             </Module>
 
             <Module label="02 — Personality">
@@ -154,10 +155,11 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
           {/* Right column */}
           <div>
             <Module label="03 — Sound & Culture">
-              <Row k="Kova / Stryx"      v={formatAnswer('sound_1', a.sound_1)} />
-              <Row k="Luma / Drak"       v={formatAnswer('sound_2', a.sound_2)} />
-              <Row k="Nevo / Krix"       v={formatAnswer('sound_3', a.sound_3)} />
-              <Row k="Aela / Vort"       v={formatAnswer('sound_4', a.sound_4)} />
+              <Row k={SCREENS_BY_ID.sound_1.briefLabel} v={formatAnswer('sound_1', a.sound_1)} />
+              <Row k={SCREENS_BY_ID.sound_2.briefLabel} v={formatAnswer('sound_2', a.sound_2)} />
+              <Row k={SCREENS_BY_ID.sound_3.briefLabel} v={formatAnswer('sound_3', a.sound_3)} />
+              <Row k={SCREENS_BY_ID.sound_4.briefLabel} v={formatAnswer('sound_4', a.sound_4)} />
+              <Row k="Market scope"      v={formatAnswer('market_scope', a.market_scope)} />
               <Row k="Cultural register" v={formatAnswer('cultural_register', a.cultural_register)} />
             </Module>
 

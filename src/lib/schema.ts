@@ -87,6 +87,20 @@ export const SCREENS: Screen[] = [
     subtext: 'And one line on what you like about it.',
     placeholder: 'Stripe — precise, no-nonsense, exactly what a payments company should be called…',
   },
+  {
+    id: 'price_tier',
+    type: 'choice',
+    module: '01', moduleLabel: 'The Business',
+    briefLabel: 'Price tier',
+    question: 'Where does this sit on price?',
+    subtext: 'The single biggest lever on how a name should sound — a name that works at ₹300 rarely works at ₹30,000.',
+    options: [
+      { value: 'accessible', label: 'Accessible — everyday price, high volume', sub: 'Roughly under ₹1,000 · trust and value matter most' },
+      { value: 'considered', label: 'Considered — a deliberate purchase', sub: 'Roughly ₹1,000–10,000 · quality and character matter most' },
+      { value: 'premium',    label: 'Premium — a meaningful investment', sub: 'Above roughly ₹10,000 · rarity and craft matter most' },
+      { value: 'varies',     label: 'Varies widely across the range', sub: 'No single price identity yet' },
+    ],
+  },
 
   // Module 02 — Personality
   {
@@ -163,22 +177,39 @@ export const SCREENS: Screen[] = [
     sonic: true,
   },
   {
+    // Syllable-matched (2 vs 2) so this pair isolates phonetic character —
+    // soft/liquid vs hard/plosive — instead of being confounded with length
+    // the way sound_1/sound_2 are (short hard word vs longer soft word).
     id: 'sound_3',
     type: 'binary',
     module: '03', moduleLabel: 'Sound & Culture',
-    briefLabel: 'Nevo / Krix',
+    briefLabel: 'Nevo / Krixel',
     question: 'Which word feels more like this brand?',
-    pair: [{ word: 'Nevo', pole: 'soft' }, { word: 'Krix', pole: 'hard' }],
+    pair: [{ word: 'Nevo', pole: 'soft' }, { word: 'Krixel', pole: 'hard' }],
     sonic: true,
   },
   {
+    // Also syllable-matched, same reason as sound_3.
     id: 'sound_4',
     type: 'binary',
     module: '03', moduleLabel: 'Sound & Culture',
-    briefLabel: 'Aela / Vort',
+    briefLabel: 'Aela / Vortek',
     question: 'Which word feels more like this brand?',
-    pair: [{ word: 'Aela', pole: 'soft' }, { word: 'Vort', pole: 'hard' }],
+    pair: [{ word: 'Aela', pole: 'soft' }, { word: 'Vortek', pole: 'hard' }],
     sonic: true,
+  },
+  {
+    id: 'market_scope',
+    type: 'choice',
+    module: '03', moduleLabel: 'Sound & Culture',
+    briefLabel: 'Market scope',
+    question: 'Where does this brand need to work?',
+    subtext: 'This directly affects whether a rooted, India-specific name is an asset or a liability — answer before the next question.',
+    options: [
+      { value: 'india_only',  label: 'India only, for now', sub: 'No near-term plan to sell or expand beyond India' },
+      { value: 'india_first', label: 'India first, global later', sub: 'Should work in India now and travel later without a rename' },
+      { value: 'global',      label: 'Global from day one', sub: 'Selling beyond India already, or about to' },
+    ],
   },
   {
     id: 'cultural_register',
