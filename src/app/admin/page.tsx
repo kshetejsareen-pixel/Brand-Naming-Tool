@@ -181,7 +181,7 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
         </div>
 
         {s.token && (
-          <ProjectPanel token={s.token} adminKey={adminKey} initial={s.project ?? DEFAULT_PROJECT} />
+          <ProjectPanel token={s.token} adminKey={adminKey} initial={{ ...DEFAULT_PROJECT, ...s.project }} />
         )}
       </div>
     </details>
