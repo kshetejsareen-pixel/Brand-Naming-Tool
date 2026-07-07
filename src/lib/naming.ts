@@ -38,7 +38,12 @@ const NAMING_SCHEMA = {
   additionalProperties: false,
 } as const
 
-function buildNamingPrompt(a: Answers): string {
+export interface GenerateNamingOptions {
+  existingNames?: string[]
+  steeringNote?: string
+}
+
+function buildNamingPrompt(a: Answers, options: GenerateNamingOptions): string {
   const sections = getReportModules()
     .map((mod) => {
       if (mod.num === '03') {
@@ -56,16 +61,26 @@ function buildNamingPrompt(a: Answers): string {
     })
     .join('\n\n')
 
-  return `You are a senior brand strategist at K&A Studios, a boutique brand identity studio based in India. A client has completed the brand naming diagnostic below.
+  const parts = [`You are a senior brand strategist at K&A Studios, a boutique brand identity studio based in India. A client has completed the brand naming diagnostic below.
 
 Client: ${a.client_name || '—'} · ${a.business_name || 'Unnamed project'} · ${a.industry || '—'}
 
 ${sections}
 
-Summarise the brand character in 2-3 sharp sentences — who this brand is, not what it does. Then generate exactly 7 naming directions grounded in the diagnostic above. Each rationale must cite specific diagnostic answers, not generic naming advice. Ground each sonic-fit note in the sonic profile above.`
+Summarise the brand character in 2-3 sharp sentences — who this brand is, not what it does. Then generate exactly 7 naming directions grounded in the diagnostic above. Each rationale must cite specific diagnostic answers, not generic naming advice. Ground each sonic-fit note in the sonic profile above.`]
+
+  if (options.existingNames?.length) {
+    parts.push(`These names have already been proposed for this brand — do not repeat any of them or suggest close variants (same root, same sound, same trick). Explore genuinely different territory:\n${options.existingNames.join(', ')}`)
+  }
+
+  if (options.steeringNote?.trim()) {
+    parts.push(`Additional direction for this batch: ${options.steeringNote.trim()}`)
+  }
+
+  return parts.join('\n\n')
 }
 
-export async function generateNamingDirections(a: Answers): Promise<NamingResult | null> {
+export async function generateNamingDirections(a: Answers, options: GenerateNamingOptions = {}): Promise<NamingResult | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     console.warn('ANTHROPIC_API_KEY not set — skipping naming generation')
@@ -82,7 +97,7 @@ export async function generateNamingDirections(a: Answers): Promise<NamingResult
         effort: 'high',
         format: { type: 'json_schema', schema: NAMING_SCHEMA },
       },
-      messages: [{ role: 'user', content: buildNamingPrompt(a) }],
+      messages: [{ role: 'user', content: buildNamingPrompt(a, options) }],
     })
 
     if (response.stop_reason === 'refusal') {

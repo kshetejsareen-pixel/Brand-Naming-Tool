@@ -15,6 +15,9 @@ export function ProjectPanel({
   const [project, setProject] = useState<ProjectState>(initial)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [steeringNote, setSteeringNote] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
   async function save(next: ProjectState) {
     setProject(next)
@@ -29,6 +32,29 @@ export function ProjectPanel({
       if (res.ok) setSaved(true)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function generateMore() {
+    setGenerating(true)
+    setGenerateError(null)
+    try {
+      const res = await fetch(`/api/submissions/${token}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ steeringNote }),
+      })
+      const data = await res.json()
+      if (res.ok && data.project) {
+        setProject(data.project)
+        setSteeringNote('')
+      } else {
+        setGenerateError('Generation failed — check that ANTHROPIC_API_KEY is configured.')
+      }
+    } catch {
+      setGenerateError('Generation failed — network error.')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -106,6 +132,40 @@ export function ProjectPanel({
           ))}
         </div>
       )}
+
+      <div style={{ marginBottom: '20px', border: '1px solid rgba(236,232,224,0.08)', padding: '12px 16px' }}>
+        <label style={{ ...labelStyle, display: 'block', marginBottom: '8px' }}>Generate more names</label>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            value={steeringNote}
+            onChange={(e) => setSteeringNote(e.target.value)}
+            placeholder={'Optional steering note — e.g. "more playful", "avoid Sanskrit roots"'}
+            disabled={generating}
+            style={{
+              flex: '1 1 260px', background: 'rgba(236,232,224,0.03)',
+              border: '1px solid rgba(236,232,224,0.08)', color: '#c8c4ba',
+              fontSize: '12px', padding: '8px', fontFamily: 'inherit',
+            }}
+          />
+          <button
+            onClick={generateMore}
+            disabled={generating}
+            style={{
+              background: 'none', border: '1px solid rgba(236,232,224,0.18)',
+              padding: '8px 16px', color: '#c8c4ba', fontFamily: 'monospace',
+              fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
+              cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.5 : 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {generating ? 'Generating…' : 'Generate more'}
+          </button>
+        </div>
+        {generateError && (
+          <div style={{ fontSize: '11px', color: 'rgba(255,130,130,0.8)', marginTop: '8px' }}>{generateError}</div>
+        )}
+      </div>
 
       <label style={{ ...labelStyle, display: 'block', marginBottom: '6px' }}>Project notes</label>
       <textarea
