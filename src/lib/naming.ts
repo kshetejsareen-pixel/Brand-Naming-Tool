@@ -108,9 +108,15 @@ export async function generateNamingDirections(a: Answers, options: GenerateNami
 
   try {
     const client = new Anthropic({ apiKey })
-    const response = await client.messages.create({
+    // Streamed: territories (premise + 2-3 names each, 2-3 territories) plus
+    // the "consider ~20-25 candidates before committing" instruction pushes
+    // adaptive thinking well past what the old flat 7-name shape needed —
+    // 8000 max_tokens was getting exhausted by thinking before the JSON
+    // output finished, truncating it mid-string. Streaming avoids the
+    // separate non-streaming SDK timeout that a higher max_tokens risks.
+    const stream = client.messages.stream({
       model: 'claude-opus-4-8',
-      max_tokens: 8000,
+      max_tokens: 24000,
       thinking: { type: 'adaptive' },
       output_config: {
         effort: 'high',
@@ -118,6 +124,12 @@ export async function generateNamingDirections(a: Answers, options: GenerateNami
       },
       messages: [{ role: 'user', content: buildNamingPrompt(a, options) }],
     })
+    const response = await stream.finalMessage()
+
+    if (response.stop_reason === 'max_tokens') {
+      console.error('Naming generation truncated at max_tokens')
+      return null
+    }
 
     if (response.stop_reason === 'refusal') {
       console.error('Naming generation refused')
