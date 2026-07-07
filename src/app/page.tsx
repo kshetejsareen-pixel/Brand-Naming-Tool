@@ -254,7 +254,7 @@ export default function Home() {
             <br /><br />
             It takes 8–10 minutes. Work through it in one sitting. There are no right answers — only honest ones.
             <br /><br />
-            Your responses are used by our team to develop naming directions. Nothing appears on this screen.
+            Your responses are used by our team to develop naming directions.
           </p>
           <button className="tool-next" onClick={saveAndAdvance}>
             Begin the exercise <span className="tool-next-arrow">→</span>
