@@ -33,6 +33,7 @@ export interface Screen {
   pair?: [PairWord, PairWord] // binary only
   multi?: boolean             // multi-select choice
   sonic?: true                 // marks the four soft/hard word-pair questions used for scoring
+  optional?: true             // can be left blank — the Continue button shouldn't wait on it
 }
 
 export type Answers = Record<string, string | string[] | undefined>
@@ -308,6 +309,7 @@ export const SCREENS: Screen[] = [
     question: 'Any words, roots, sounds, or associations that are off-limits?',
     subtext: 'Past names, family names, competitor overlaps, anything that would feel wrong. Leave blank if none.',
     placeholder: 'Nothing starting with "Om-"… nothing that sounds like our old name, "Verve"…',
+    optional: true,
   },
 
   // Module 06 — Free Mind

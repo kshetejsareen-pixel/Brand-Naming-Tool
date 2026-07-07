@@ -24,6 +24,7 @@ interface Screen {
   options?: Option[]
   pair?: [PairWord, PairWord]       // binary only
   multi?: boolean                   // multi-select choice
+  optional?: true                   // can be left blank
 }
 
 type Answers = Record<string, string | string[]>
@@ -100,6 +101,7 @@ export default function Home() {
     if (screen.type === 'info') {
       return !!(info.client_name.trim() && info.client_email.trim() && info.industry)
     }
+    if (screen.optional) return true
     if (screen.multi) return Array.isArray(value) && (value as string[]).length > 0
     return typeof value === 'string' ? value.trim().length > 0 : true
   }, [screen, value, info])
