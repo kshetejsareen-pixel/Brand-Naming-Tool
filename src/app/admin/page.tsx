@@ -1,12 +1,17 @@
 import { list } from '@vercel/blob'
+import { type Answers, formatAnswer } from '@/lib/schema'
+import { type ProjectState, DEFAULT_PROJECT } from '@/lib/project'
+import { ProjectPanel } from '@/components/ProjectPanel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Submission {
+  token: string
   submittedAt: string
   briefUrl: string
   emailStatus: 'sent' | 'failed'
-  answers: Record<string, string | string[]>
+  answers: Answers
+  project?: ProjectState
 }
 
 // ─── Fetch all submissions from Blob ─────────────────────────────────────────
@@ -46,7 +51,7 @@ function val(v: string | string[] | undefined): string {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function SubmissionCard({ s, index }: { s: Submission & { blobUrl: string }; index: number }) {
+function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: string }; index: number; adminKey: string }) {
   const a = s.answers
   const emailFailed = s.emailStatus === 'failed'
 
@@ -127,49 +132,55 @@ function SubmissionCard({ s, index }: { s: Submission & { blobUrl: string }; ind
           {/* Left column */}
           <div>
             <Module label="01 — The Business">
-              <Row k="What it does"      v={val(a.what_it_does)} />
-              <Row k="Customer"          v={val(a.who_is_customer)} />
-              <Row k="Core belief"       v={val(a.belief)} />
-              <Row k="Competitors"       v={val(a.competitors)} />
-              <Row k="Admired name"      v={val(a.admired_name)} />
+              <Row k="What it does"      v={formatAnswer('what_it_does', a.what_it_does)} />
+              <Row k="Customer"          v={formatAnswer('who_is_customer', a.who_is_customer)} />
+              <Row k="Core belief"       v={formatAnswer('belief', a.belief)} />
+              <Row k="Competitors"       v={formatAnswer('competitors', a.competitors)} />
+              <Row k="Admired name"      v={formatAnswer('admired_name', a.admired_name)} />
             </Module>
 
             <Module label="02 — Personality">
-              <Row k="Room presence"     v={val(a.room_entry)} />
-              <Row k="Must never be"     v={val(a.worst_when)} />
-              <Row k="Archetype"         v={val(a.archetype_person)} />
-              <Row k="Legendary for"     v={val(a.legendary_for)} />
+              <Row k="Room presence"     v={formatAnswer('room_entry', a.room_entry)} />
+              <Row k="Acceptable flaw"   v={formatAnswer('acceptable_flaw', a.acceptable_flaw)} />
+              <Row k="Archetype"         v={formatAnswer('archetype_person', a.archetype_person)} />
+              <Row k="Legendary for"     v={formatAnswer('legendary_for', a.legendary_for)} />
             </Module>
 
             <Module label="06 — Free Mind">
-              <Row k="Seven words"       v={val(a.seven_words)} />
+              <Row k="Seven words"       v={formatAnswer('seven_words', a.seven_words)} />
             </Module>
           </div>
 
           {/* Right column */}
           <div>
-            <Module label="03 — Sound">
-              <Row k="Kova / Stryx"      v={val(a.sound_1)} />
-              <Row k="Luma / Drak"       v={val(a.sound_2)} />
-              <Row k="Nevo / Krix"       v={val(a.sound_3)} />
-              <Row k="Aela / Vort"       v={val(a.sound_4)} />
-              <Row k="Veda / Flux"       v={val(a.sound_5)} />
+            <Module label="03 — Sound & Culture">
+              <Row k="Kova / Stryx"      v={formatAnswer('sound_1', a.sound_1)} />
+              <Row k="Luma / Drak"       v={formatAnswer('sound_2', a.sound_2)} />
+              <Row k="Nevo / Krix"       v={formatAnswer('sound_3', a.sound_3)} />
+              <Row k="Aela / Vort"       v={formatAnswer('sound_4', a.sound_4)} />
+              <Row k="Cultural register" v={formatAnswer('cultural_register', a.cultural_register)} />
             </Module>
 
             <Module label="04 — Feeling">
-              <Row k="Before discovery"  v={val(a.before_feeling)} />
-              <Row k="First encounter"   v={val(a.first_encounter)} />
-              <Row k="Sensory"           v={val(a.sensory)} />
+              <Row k="Before discovery"  v={formatAnswer('before_feeling', a.before_feeling)} />
+              <Row k="First encounter"   v={formatAnswer('first_encounter', a.first_encounter)} />
+              <Row k="Sensory"           v={formatAnswer('sensory', a.sensory)} />
             </Module>
 
             <Module label="05 — Constraints">
-              <Row k="Naming type"       v={val(a.naming_type)} />
-              <Row k="Domain"            v={val(a.domain_required)} />
-              <Row k="Language"          v={val(a.language)} />
-              <Row k="Syllables"         v={val(a.syllables)} />
+              <Row k="Naming type"       v={formatAnswer('naming_type', a.naming_type)} />
+              <Row k="Naming stance"     v={formatAnswer('naming_stance', a.naming_stance)} />
+              <Row k="Domain"            v={formatAnswer('domain_required', a.domain_required)} />
+              <Row k="Language"          v={formatAnswer('language', a.language)} />
+              <Row k="Syllables"         v={formatAnswer('syllables', a.syllables)} />
+              <Row k="Off-limits"        v={formatAnswer('off_limits', a.off_limits)} />
             </Module>
           </div>
         </div>
+
+        {s.token && (
+          <ProjectPanel token={s.token} adminKey={adminKey} initial={s.project ?? DEFAULT_PROJECT} />
+        )}
       </div>
     </details>
   )
@@ -301,7 +312,7 @@ export default async function AdminPage({
               </div>
 
               {submissions.map((s, i) => (
-                <SubmissionCard key={s.blobUrl} s={s} index={i} />
+                <SubmissionCard key={s.blobUrl} s={s} index={i} adminKey={key} />
               ))}
             </>
           )}

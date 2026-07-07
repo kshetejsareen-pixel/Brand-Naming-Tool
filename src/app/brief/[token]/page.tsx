@@ -1,134 +1,28 @@
 import { notFound } from 'next/navigation'
+import { list } from '@vercel/blob'
+import { type Answers, SCREENS_BY_ID, formatAnswer, phonosemanticProfile } from '@/lib/schema'
+import { isValidToken } from '@/lib/project'
 
 interface BriefData {
-  answers: Record<string, string | string[]>
+  answers: Answers
   submittedAt: string
 }
 
-function decode(token: string): BriefData | null {
+// The token addresses a Blob record rather than encoding the answers itself —
+// a base64 dump of the full diagnostic in the URL had no expiry and no auth.
+async function loadSubmission(token: string): Promise<BriefData | null> {
+  if (!isValidToken(token)) return null
   try {
-    const padded = token.replace(/-/g, '+').replace(/_/g, '/').padEnd(
-      token.length + (4 - (token.length % 4)) % 4, '='
-    )
-    const json = Buffer.from(padded, 'base64').toString('utf8')
-    return JSON.parse(json)
+    const { blobs } = await list({ prefix: `submissions/${token}.json` })
+    const blob = blobs[0]
+    if (!blob) return null
+    const res = await fetch(blob.url, { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { answers: data.answers, submittedAt: data.submittedAt }
   } catch {
     return null
   }
-}
-
-function phonosemanticProfile(a: Record<string, string | string[]>): { score: number; label: string; detail: string } {
-  const soft = ['Kova', 'Luma', 'Nevo', 'Aela']
-  const choices = [a.sound_1, a.sound_2, a.sound_3, a.sound_4].map((v) => String(v || ''))
-  const score = choices.filter((v) => soft.includes(v)).length
-
-  const axes = [
-    { pair: ['Kova', 'Stryx'], desc: 'approachable ↔ sharp' },
-    { pair: ['Luma', 'Drak'],  desc: 'luminous ↔ dark' },
-    { pair: ['Nevo', 'Krix'],  desc: 'fluid ↔ structured' },
-    { pair: ['Aela', 'Vort'],  desc: 'lyrical ↔ direct' },
-  ]
-  const detail = axes.map((ax, i) => `${ax.desc}: ${choices[i] || '—'}`).join(' · ')
-
-  let label = 'Balanced'
-  if (score >= 3) label = 'Soft / warm'
-  if (score <= 1) label = 'Hard / precise'
-
-  return { score, label, detail }
-}
-
-function archetypeLabel(val: string): string {
-  const map: Record<string, string> = {
-    craftsperson: 'The Master Craftsperson',
-    guide:        'The Experienced Guide',
-    visionary:    'The Visionary',
-    rebel:        'The Rebel',
-    caregiver:    'The Caregiver',
-    ruler:        'The Ruler',
-  }
-  return map[val] || val
-}
-
-function presenceLabel(val: string): string {
-  const map: Record<string, string> = {
-    quiet_confident:    'Quietly — then everyone is drawn to it',
-    warm_host:          'With warmth — makes the room feel welcoming',
-    impossible_miss:    'Boldly — impossible to miss',
-    best_conversation:  'Slowly — but has the most interesting thing to say',
-  }
-  return map[val] || val
-}
-
-function antiValueLabel(val: string): string {
-  const map: Record<string, string> = {
-    people_pleasing: 'Trying too hard to please everyone',
-    cold:            'Cold and transactional',
-    complicated:     'Overcomplicated and hard to understand',
-    generic:         'Generic — indistinguishable from everything else',
-  }
-  return map[val] || val
-}
-
-function firstEncounterLabel(val: string): string {
-  const map: Record<string, string> = {
-    recognition: 'Instant recognition — this is for me',
-    curiosity:   'Curiosity — I need to know more',
-    trust:       "Trust — these people know what they're doing",
-    aspiration:  'Aspiration — I want to be associated with this',
-  }
-  return map[val] || val
-}
-
-function sensoryLabel(val: string): string {
-  const map: Record<string, string> = {
-    cedar_leather: 'Cedar and leather — classic, grounded',
-    fresh_linen:   'Fresh linen — clean, honest, precise',
-    warm_vanilla:  'Warm vanilla — nurturing, familiar',
-    sea_air:       'Sea air — free, expansive',
-    dark_coffee:   'Dark coffee — focused, intense',
-    green_herb:    'Green herb — natural, purposeful',
-  }
-  return map[val] || val
-}
-
-function syllableLabel(val: string): string {
-  const map: Record<string, string> = {
-    '1':    'One syllable',
-    '2':    'Two syllables',
-    '3_4':  'Three or four syllables',
-    open:   'No preference',
-  }
-  return map[val] || val
-}
-
-function namingTypeLabel(val: string): string {
-  const map: Record<string, string> = {
-    invented:  'Invented — a word that didn\'t exist before',
-    real_word: 'Real word — borrows existing meaning',
-    compound:  'Blend / compound — two ideas joined',
-    no_pref:   'No preference — best name wins',
-  }
-  return map[val] || val
-}
-
-function domainLabel(val: string): string {
-  const map: Record<string, string> = {
-    hard_yes:        'Critical — exact .com must be available',
-    preferred:       'Preferred but flexible — .co or .in works',
-    not_a_priority:  'Not a priority right now',
-  }
-  return map[val] || val
-}
-
-function languageLabel(val: string | string[]): string {
-  const map: Record<string, string> = {
-    english: 'English',
-    hindi:   'Hindi',
-    both:    'English + Hindi',
-    other:   'Other',
-  }
-  const arr = Array.isArray(val) ? val : [val]
-  return arr.map((v) => map[v] || v).join(', ')
 }
 
 // ─── Section component ────────────────────────────────────────────────────────
@@ -159,15 +53,22 @@ function Field({ label, value }: { label: string; value: string }) {
   )
 }
 
+// Renders a question's answer using the shared schema — the label shown here
+// always matches the label shown in the email / Claude doc / admin view,
+// because all four read from the same src/lib/schema.ts definitions.
+function AnswerField({ id, a }: { id: string; a: Answers }) {
+  const screen = SCREENS_BY_ID[id]
+  return <Field label={screen.briefLabel} value={formatAnswer(id, a[id])} />
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function BriefPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const data = decode(token)
+  const data = await loadSubmission(token)
   if (!data) notFound()
 
-  const { answers, submittedAt } = data
-  const a = answers
+  const { answers: a, submittedAt } = data
   const sonic = phonosemanticProfile(a)
 
   const date = new Date(submittedAt).toLocaleDateString('en-GB', {
@@ -223,16 +124,16 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
               <div style={{ border: '1px solid rgba(236,232,224,0.10)', padding: '24px' }}>
                 <div style={{ fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6b6460', marginBottom: '12px' }}>Sonic register</div>
                 <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '28px', fontStyle: 'italic', color: '#ece8e0', marginBottom: '8px' }}>{sonic.label}</div>
-                <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#6b6460' }}>{sonic.score}/4 soft phoneme preference</div>
-                <div style={{ marginTop: '12px', fontSize: '12px', color: '#8a857d', lineHeight: 1.6 }}>{sonic.detail}</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#6b6460' }}>{sonic.score}/{sonic.total} soft phoneme preference</div>
+                <div style={{ marginTop: '12px', fontSize: '12px', color: '#8a857d', lineHeight: 1.6 }}>{formatAnswer('cultural_register', a.cultural_register)}</div>
               </div>
               {/* Archetype */}
               <div style={{ border: '1px solid rgba(236,232,224,0.10)', padding: '24px' }}>
                 <div style={{ fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6b6460', marginBottom: '12px' }}>Primary archetype</div>
-                <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '28px', fontStyle: 'italic', color: '#ece8e0', marginBottom: '8px' }}>{archetypeLabel(String(a.archetype_person || ''))}</div>
+                <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '28px', fontStyle: 'italic', color: '#ece8e0', marginBottom: '8px' }}>{formatAnswer('archetype_person', a.archetype_person)}</div>
                 <div style={{ fontSize: '12px', color: '#8a857d', marginTop: '12px', lineHeight: 1.6 }}>
-                  <div>Presence: {presenceLabel(String(a.room_entry || ''))}</div>
-                  <div style={{ marginTop: '4px' }}>Anti-value: {antiValueLabel(String(a.worst_when || ''))}</div>
+                  <div>Presence: {formatAnswer('room_entry', a.room_entry)}</div>
+                  <div style={{ marginTop: '4px' }}>Acceptable flaw: {formatAnswer('acceptable_flaw', a.acceptable_flaw)}</div>
                 </div>
               </div>
             </div>
@@ -240,58 +141,54 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
 
           {/* Module 01 */}
           <Section num="01" title="The Business">
-            <Field label="What it does" value={String(a.what_it_does || '—')} />
-            <Field label="Who the customer is" value={String(a.who_is_customer || '—')} />
-            <Field label="Core belief" value={String(a.belief || '—')} />
-            <Field label="Competitors" value={String(a.competitors || '—')} />
-            <Field label="Admired name" value={String(a.admired_name || '—')} />
+            <AnswerField id="what_it_does" a={a} />
+            <AnswerField id="who_is_customer" a={a} />
+            <AnswerField id="belief" a={a} />
+            <AnswerField id="competitors" a={a} />
+            <AnswerField id="admired_name" a={a} />
           </Section>
 
           {/* Module 02 */}
           <Section num="02" title="Personality">
-            <Field label="Room presence" value={presenceLabel(String(a.room_entry || ''))} />
-            <Field label="Anti-value (must never be)" value={antiValueLabel(String(a.worst_when || ''))} />
-            <Field label="Archetype" value={archetypeLabel(String(a.archetype_person || ''))} />
-            <Field label="Legendary for (10-year vision)" value={String(a.legendary_for || '—')} />
+            <AnswerField id="room_entry" a={a} />
+            <AnswerField id="acceptable_flaw" a={a} />
+            <AnswerField id="archetype_person" a={a} />
+            <AnswerField id="legendary_for" a={a} />
           </Section>
 
           {/* Module 03 */}
-          <Section num="03" title="Sound">
+          <Section num="03" title="Sound & Culture">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-              {[
-                { pair: 'Kova / Stryx', chosen: String(a.sound_1 || '—') },
-                { pair: 'Luma / Drak',  chosen: String(a.sound_2 || '—') },
-                { pair: 'Nevo / Krix',  chosen: String(a.sound_3 || '—') },
-                { pair: 'Aela / Vort',  chosen: String(a.sound_4 || '—') },
-                { pair: 'Veda / Flux',  chosen: String(a.sound_5 || '—') },
-              ].map((item) => (
-                <div key={item.pair} style={{ border: '1px solid rgba(236,232,224,0.08)', padding: '14px 16px' }}>
-                  <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#5a5650', marginBottom: '6px' }}>{item.pair}</div>
-                  <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '20px', fontStyle: 'italic', color: '#ece8e0' }}>{item.chosen}</div>
+              {['sound_1', 'sound_2', 'sound_3', 'sound_4'].map((id) => (
+                <div key={id} style={{ border: '1px solid rgba(236,232,224,0.08)', padding: '14px 16px' }}>
+                  <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#5a5650', marginBottom: '6px' }}>{SCREENS_BY_ID[id].briefLabel}</div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '20px', fontStyle: 'italic', color: '#ece8e0' }}>{formatAnswer(id, a[id])}</div>
                 </div>
               ))}
             </div>
-            <Field label="Derived profile" value={`${sonic.label} (${sonic.score}/4) — ${sonic.detail}`} />
+            <Field label="Sonic profile" value={`${sonic.label} (${sonic.score}/${sonic.total}) — ${formatAnswer('cultural_register', a.cultural_register)}`} />
           </Section>
 
           {/* Module 04 */}
           <Section num="04" title="Feeling">
-            <Field label="What customer feels before finding this brand" value={String(a.before_feeling || '—')} />
-            <Field label="First encounter feeling" value={firstEncounterLabel(String(a.first_encounter || ''))} />
-            <Field label="Sensory / scent" value={sensoryLabel(String(a.sensory || ''))} />
+            <AnswerField id="before_feeling" a={a} />
+            <AnswerField id="first_encounter" a={a} />
+            <AnswerField id="sensory" a={a} />
           </Section>
 
           {/* Module 05 */}
           <Section num="05" title="Constraints">
-            <Field label="Naming type" value={namingTypeLabel(String(a.naming_type || ''))} />
-            <Field label="Domain requirement" value={domainLabel(String(a.domain_required || ''))} />
-            <Field label="Language" value={languageLabel(a.language || '')} />
-            <Field label="Syllable preference" value={syllableLabel(String(a.syllables || ''))} />
+            <AnswerField id="naming_type" a={a} />
+            <AnswerField id="naming_stance" a={a} />
+            <AnswerField id="domain_required" a={a} />
+            <AnswerField id="language" a={a} />
+            <AnswerField id="syllables" a={a} />
+            <AnswerField id="off_limits" a={a} />
           </Section>
 
           {/* Module 06 */}
           <Section num="06" title="Free Association">
-            <Field label="Seven words" value={String(a.seven_words || '—')} />
+            <AnswerField id="seven_words" a={a} />
           </Section>
 
           {/* Footer note */}
