@@ -88,12 +88,12 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
         </span>
 
         {/* Industry */}
-        <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', letterSpacing: '0.12em', textTransform: 'uppercase', minWidth: '140px' }}>
+        <span className="hide-mobile" style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', letterSpacing: '0.12em', textTransform: 'uppercase', minWidth: '140px' }}>
           {val(a.industry)}
         </span>
 
         {/* Date */}
-        <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', minWidth: '160px' }}>
+        <span className="hide-mobile" style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', minWidth: '160px' }}>
           {fmtDate(s.submittedAt)}
         </span>
 
