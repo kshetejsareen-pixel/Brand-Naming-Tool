@@ -76,7 +76,7 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
         </span>
 
         {/* Name + business */}
-        <span style={{ flex: 1 }}>
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           <span style={{ fontSize: '15px', color: '#ece8e0' }}>
             {val(a.client_name)}
           </span>
