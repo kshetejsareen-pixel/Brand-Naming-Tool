@@ -49,6 +49,15 @@ function val(v: string | string[] | undefined): string {
   return Array.isArray(v) ? v.join(', ') : v
 }
 
+// Truncated in JS rather than relying on CSS text-overflow: ellipsis —
+// Safari has a real bug where a <summary> flex child with a long unbroken
+// string and CSS-only ellipsis can mis-paint the clipped overflow as a
+// stray vertical sliver instead of cleanly hiding it. No CSS overflow to
+// mishandle if there's nothing left to overflow.
+function truncate(str: string, maxLen: number): string {
+  return str.length > maxLen ? str.slice(0, maxLen - 1).trimEnd() + '…' : str
+}
+
 // ─── Row component ────────────────────────────────────────────────────────────
 
 function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: string }; index: number; adminKey: string }) {
@@ -61,14 +70,16 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
       marginBottom: '12px',
       background: 'rgba(236,232,224,0.02)',
     }}>
-      <summary style={{
+      {/* Safari has known layout bugs when <summary> itself is the flex
+          container (its native default display is list-item, and browsers
+          diverge on how the override to flex is handled) — the actual flex
+          row lives on a plain inner div instead. */}
+      <summary style={{ cursor: 'pointer', listStyle: 'none', userSelect: 'none' }}>
+      <div style={{
         padding: '20px 24px',
-        cursor: 'pointer',
-        listStyle: 'none',
         display: 'flex',
         alignItems: 'center',
         gap: '20px',
-        userSelect: 'none',
       }}>
         {/* Index */}
         <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#5a5650', minWidth: '28px' }}>
@@ -78,22 +89,22 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
         {/* Name + business, with industry/date as a second line underneath —
             avoids fighting fixed-width columns for horizontal space */}
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: '15px', color: '#ece8e0' }}>
-              {val(a.client_name)}
+              {truncate(val(a.client_name), 40)}
             </span>
             {a.business_name && (
               <span style={{ fontSize: '13px', color: '#8a857d', marginLeft: '10px' }}>
-                {val(a.business_name)}
+                {truncate(val(a.business_name), 50)}
               </span>
             )}
           </div>
           <div style={{
             fontFamily: 'monospace', fontSize: '10px', color: '#6b6460',
             letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '4px',
-            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+            overflow: 'hidden', whiteSpace: 'nowrap',
           }}>
-            {val(a.industry)} · {fmtDate(s.submittedAt)}
+            {truncate(val(a.industry), 30)} · {fmtDate(s.submittedAt)}
           </div>
         </span>
 
@@ -109,6 +120,7 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
 
         {/* Expand arrow */}
         <span style={{ color: '#5a5650', fontSize: '12px' }}>▸</span>
+      </div>
       </summary>
 
       {/* Expanded content */}
