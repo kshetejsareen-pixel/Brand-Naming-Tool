@@ -24,7 +24,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'Brand Naming Tool',
-  description: 'A guided exercise to discover your brand name.',
+  description: 'A guided naming diagnostic, developed by K&A Studios.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
