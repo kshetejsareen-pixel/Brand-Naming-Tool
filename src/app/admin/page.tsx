@@ -75,26 +75,26 @@ function SubmissionCard({ s, index, adminKey }: { s: Submission & { blobUrl: str
           #{index + 1}
         </span>
 
-        {/* Name + business */}
-        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-          <span style={{ fontSize: '15px', color: '#ece8e0' }}>
-            {val(a.client_name)}
-          </span>
-          {a.business_name && (
-            <span style={{ fontSize: '13px', color: '#8a857d', marginLeft: '10px' }}>
-              {val(a.business_name)}
+        {/* Name + business, with industry/date as a second line underneath —
+            avoids fighting fixed-width columns for horizontal space */}
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: '15px', color: '#ece8e0' }}>
+              {val(a.client_name)}
             </span>
-          )}
-        </span>
-
-        {/* Industry */}
-        <span className="hide-mobile" style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', letterSpacing: '0.12em', textTransform: 'uppercase', minWidth: '140px' }}>
-          {val(a.industry)}
-        </span>
-
-        {/* Date */}
-        <span className="hide-mobile" style={{ fontFamily: 'monospace', fontSize: '10px', color: '#6b6460', minWidth: '160px' }}>
-          {fmtDate(s.submittedAt)}
+            {a.business_name && (
+              <span style={{ fontSize: '13px', color: '#8a857d', marginLeft: '10px' }}>
+                {val(a.business_name)}
+              </span>
+            )}
+          </div>
+          <div style={{
+            fontFamily: 'monospace', fontSize: '10px', color: '#6b6460',
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '4px',
+            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+          }}>
+            {val(a.industry)} · {fmtDate(s.submittedAt)}
+          </div>
         </span>
 
         {/* Email status */}
@@ -271,7 +271,6 @@ export default async function AdminPage({
           summary::-webkit-details-marker { display: none; }
           @media (max-width: 640px) {
             .grid-2 { grid-template-columns: 1fr !important; }
-            .hide-mobile { display: none !important; }
           }
         `}</style>
       </head>
@@ -306,9 +305,7 @@ export default async function AdminPage({
                 borderBottom: '1px solid rgba(236,232,224,0.06)', marginBottom: '12px',
               }}>
                 <span style={{ minWidth: '28px' }}>#</span>
-                <span style={{ flex: 1 }}>Client</span>
-                <span className="hide-mobile" style={{ minWidth: '140px' }}>Industry</span>
-                <span className="hide-mobile" style={{ minWidth: '160px' }}>Submitted</span>
+                <span style={{ flex: 1 }}>Client · Industry · Submitted</span>
                 <span style={{ minWidth: '90px' }}>Email</span>
                 <span style={{ width: '20px' }} />
               </div>
